@@ -1,0 +1,18 @@
+OUTROOT ?= .
+
+BUILD_ENV_FILE ?= build.env
+include $(BUILD_ENV_FILE)
+
+DOCKER ?= DOCKER_BUILDKIT=1 docker
+# DOCKER ?= DOCKER_CLI_EXPERIMENTAL=enabled docker buildx
+DOCKER_ARGS += $(foreach x, $(shell cat $(BUILD_ENV_FILE)), --build-arg $(x))
+DOCKER_VERSION := $(shell $(DOCKER) version -f "{{.Server.Version}}")
+
+
+.PHONY: build test check-gen
+build test check-gen:
+	@$(DOCKER) build . \
+		--output $(OUTROOT) \
+		--target copy-products \
+		--build-arg PRODUCTS_OF=$@ \
+		$(DOCKER_ARGS)
