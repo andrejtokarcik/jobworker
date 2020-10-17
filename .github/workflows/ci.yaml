@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Local Packages
+        if: github.actor == env.LOCAL_ACTOR
+        run: |
+          apt-get -qq update
+          apt-get -qq install -y --no-install-recommends make
+          docker_dl=https://download.docker.com/linux/static/stable/x86_64
+          curl -fsSL ${docker_dl}/docker-${{secrets.DOCKER_VERSION}}.tgz | \
+            tar xzvf - --strip 1 -C /usr/bin docker/docker
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - run: make test
+      - run: make check-gen
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: golangci/golangci-lint-action@v2
+        with:
+          version: v${{env.GOLANGCI_LINT_VERSION}}
