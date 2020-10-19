@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package jobworker;
+option go_package = "proto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+service JobWorker {
+  rpc StartJob(StartJobRequest) returns (StartJobResponse);
+  rpc StopJob(StopJobRequest) returns (StopJobResponse);
+  rpc GetJob(GetJobRequest) returns (GetJobResponse);
+}
+
+message CommandSpec {
+  string command = 1;
+  repeated string args = 2;
+  repeated string env = 3;
+  string dir = 4;
+}
+
+message StartJobRequest {
+  CommandSpec command = 1;
+}
+
+message StartJobResponse {
+  // A UUID in its standard 8-4-4-4-12 hexadecimal representation
+  string job_uuid = 1;
+}
+
+message StopJobRequest {
+  string job_uuid = 1;
+  //uint32 signal = 2;   // go-cmd does SIGTERM only
+}
+
+message StopJobResponse {}
+
+message GetJobRequest {
+  string job_uuid = 1;
+  bool with_logs = 2;
+}
+
+message GetJobResponse {
+  CommandSpec command = 1;
+
+  enum Status {
+    UNKNOWN = 0;
+    RUNNING = 1;
+    COMPLETED = 2;
+    STOPPED = 3;
+
+    // The command either failed to start (it never ran) or it started
+    // but was terminated unexpectedly (probably signaled)
+    FAILED = 4;
+
+    // The command has not started yet
+    PENDING = 5;
+  };
+  Status status = 2;
+
+  // Equals -1 if the command execution has not finished
+  int32 exit_code = 3;
+
+  google.protobuf.Timestamp started_at = 4;
+  google.protobuf.Timestamp stopped_at = 5;
+  google.protobuf.Duration runtime = 6;
+
+  // proc(5): "On 64-bit systems, pid_max can be set to any value up to 2^22"
+  uint32 pid = 7;
+
+  // Populated only if with_logs set to true
+  repeated string stdout = 8;
+  repeated string stderr = 9;
+}
