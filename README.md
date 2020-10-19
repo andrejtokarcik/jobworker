@@ -1,5 +1,7 @@
 # Job Worker
 
+[![Actions Status](https://github.com/andrejtokarcik/jobworker/workflows/CI/badge.svg)](https://github.com/andrejtokarcik/jobworker/actions)
+
 A prototype gRPC service providing OS process execution and monitoring,
 written in Go.
 
