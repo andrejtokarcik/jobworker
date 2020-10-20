@@ -1,0 +1,32 @@
+OUTROOT ?= .
+
+BUILD_ENV_FILE ?= build.env
+include $(BUILD_ENV_FILE)
+
+DOCKER ?= DOCKER_BUILDKIT=1 docker
+# DOCKER ?= DOCKER_CLI_EXPERIMENTAL=enabled docker buildx
+DOCKER_ARGS += $(foreach x, $(shell cat $(BUILD_ENV_FILE)), --build-arg $(x))
+DOCKER_VERSION := $(shell $(DOCKER) version -f "{{.Server.Version}}")
+
+ACT ?= act
+ACT_ARGS += $(if $(CI_JOB), --job $(CI_JOB))
+
+.PHONY: build test protoc check-gen
+build test protoc check-gen:
+	@$(DOCKER) build . \
+		--output $(OUTROOT) \
+		--target copy-products \
+		--build-arg PRODUCTS_OF=$@ \
+		$(DOCKER_ARGS)
+
+.PHONY: ci
+ci:
+	@$(ACT) --bind \
+		--actor $(LOCAL_ACTOR) \
+		--env-file $(BUILD_ENV_FILE) \
+		--secret DOCKER_VERSION=$(DOCKER_VERSION) \
+		$(ACT_ARGS)
+
+.PHONY: lint
+lint: CI_JOB := lint
+lint: ci

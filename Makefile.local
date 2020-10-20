@@ -1,0 +1,36 @@
+OUTROOT ?= .
+
+GO ?= go
+GO_LINT ?= golangci-lint
+
+MAKE := $(MAKE) -f Makefile.local
+
+.PHONY: build server client
+build: server client
+server client:
+	$(GO) build -v -o $(OUTROOT)/bin/$@ ./cmd/$@
+
+.PHONY: test
+test:
+	$(GO) test -v -race ./...
+
+.PHONY: fmt
+fmt:
+	$(GO) fmt ./...
+
+.PHONY: tidy
+tidy:
+	$(GO) mod tidy
+
+.PHONY: protoc
+protoc:
+	$(MAKE) PROTOC_OUTROOT=$(OUTROOT)/proto -C proto
+
+.PHONY: check-gen
+check-gen: OUTROOT := .
+check-gen: fmt tidy protoc
+	git diff --exit-code
+
+.PHONY: lint
+lint:
+	$(GO_LINT) run -v ./...
