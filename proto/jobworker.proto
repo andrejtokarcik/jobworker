@@ -30,7 +30,6 @@ message StartJobResponse {
 
 message StopJobRequest {
   string job_uuid = 1;
-  //uint32 signal = 2;   // go-cmd does SIGTERM only
 }
 
 message StopJobResponse {}
