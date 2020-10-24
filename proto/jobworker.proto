@@ -4,7 +4,6 @@ package jobworker;
 option go_package = "proto";
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/duration.proto";
 
 service JobWorker {
   rpc StartJob(StartJobRequest) returns (StartJobResponse);
@@ -62,12 +61,11 @@ message GetJobResponse {
 
   google.protobuf.Timestamp started_at = 4;
   google.protobuf.Timestamp stopped_at = 5;
-  google.protobuf.Duration runtime = 6;
 
   // proc(5): "On 64-bit systems, pid_max can be set to any value up to 2^22"
-  uint32 pid = 7;
+  uint32 pid = 6;
 
   // Populated only if with_logs set to true
-  repeated string stdout = 8;
-  repeated string stderr = 9;
+  repeated string stdout = 7;
+  repeated string stderr = 8;
 }
