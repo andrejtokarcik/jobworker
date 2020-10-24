@@ -60,7 +60,7 @@ message GetJobResponse {
   int32 exit_code = 3;
 
   google.protobuf.Timestamp started_at = 4;
-  google.protobuf.Timestamp stopped_at = 5;
+  google.protobuf.Timestamp ended_at = 5;
 
   // proc(5): "On 64-bit systems, pid_max can be set to any value up to 2^22"
   uint32 pid = 6;
