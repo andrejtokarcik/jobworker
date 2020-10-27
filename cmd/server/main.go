@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/andrejtokarcik/jobworker/mtls"
+	"github.com/andrejtokarcik/jobworker/server"
 )
 
 var (
@@ -31,7 +32,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to load mTLS credentials: ", err)
 	}
-	grpcServer := grpc.NewServer(grpc.Creds(creds))
+	grpcServer := server.New(grpc.Creds(creds))
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
