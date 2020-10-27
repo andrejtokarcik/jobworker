@@ -1,0 +1,51 @@
+OPENSSL ?= openssl
+KEY_LENGTH := 4096
+
+CA_CERTS ?= client-ca.crt server-ca.crt server-ca2.crt
+CA_SIGNED_CERTS ?= client-ca/client1.crt server-ca/server1.crt
+SELF_SIGNED_CERTS ?= self-signed.crt
+ALL_SIGNING_REQUESTS = $(patsubst %.crt, %.csr, $(CA_SIGNED_CERTS) $(SELF_SIGNED_CERTS))
+
+CA_CERT_DAYS := 365
+CA_SIGNED_CERT_DAYS := 60
+SELF_SIGNED_CERT_DAYS := 365
+
+.PHONY: all
+all: $(CA_CERT) $(CA_SIGNED_CERTS) $(SELF_SIGNED_CERTS)
+
+%.key:
+	mkdir -p $(@D)
+	$(OPENSSL) genpkey -algorithm RSA \
+		-pkeyopt rsa_keygen_bits:$(KEY_LENGTH) \
+		-out $@
+
+$(CA_CERTS): %.crt: %.key
+	$(OPENSSL) req -new -x509 \
+		-days $(CA_CERT_DAYS) \
+		-subj "/CN=$(*F)" \
+		-out $@ -key $<
+
+$(ALL_SIGNING_REQUESTS): %.csr: %.key
+	$(OPENSSL) req -new \
+		-subj "/CN=$(*F)" \
+		-out $@ -key $<
+
+$(CA_SIGNED_CERTS): $(CA_CERTS)
+$(CA_SIGNED_CERTS): %.crt: %.csr
+	DNSNAME=$(*F) $(OPENSSL) x509 -req \
+		-days $(CA_SIGNED_CERT_DAYS) \
+		-CA $(@D).crt -CAkey $(@D).key -CAcreateserial \
+		-extfile san.cnf \
+		-out $@ -in $<
+
+$(SELF_SIGNED_CERTS): %.crt: %.csr
+	DNSNAME=$(*F) $(OPENSSL) x509 -req \
+		-days $(SELF_SIGNED_CERT_DAYS) \
+		-signkey $(@:.crt=.key) \
+		-extfile san.cnf \
+		-out $@ -in $<
+
+.PHONY: clean
+clean:
+	-rm -f *.key *.crt *.csr *.srl
+	-rm -f **/*.key **/*.crt **/*.csr **/*.srl
