@@ -1,7 +1,7 @@
-PROTOS := $(wildcard *.proto)
-
 PROTOC ?= protoc
 PROTOC_OUTROOT ?= .
+
+PROTOS := $(wildcard *.proto)
 PROTOC_OUTPUTS := $(PROTOS:%.proto=$(PROTOC_OUTROOT)/%.pb.go)
 
 PROTOC_DEPS := Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types

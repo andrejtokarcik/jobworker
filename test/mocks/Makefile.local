@@ -1,0 +1,12 @@
+MOCKERY ?= mockery
+MOCKERY_OUTROOT ?= .
+
+CODE_DIR ?= ../..
+
+.PHONY: all
+all:
+	$(MOCKERY) --all --dir $(CODE_DIR) --output $(MOCKERY_OUTROOT)
+
+.PHONY: clean
+clean:
+	-rm -f $(MOCKERY_OUTROOT)/*.go

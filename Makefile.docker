@@ -11,8 +11,8 @@ DOCKER_VERSION := $(shell $(DOCKER) version -f "{{.Server.Version}}")
 ACT ?= act
 ACT_ARGS += $(if $(CI_JOB), --job $(CI_JOB))
 
-.PHONY: build test protoc check-gen
-build test protoc check-gen:
+.PHONY: build test generate protoc check-gen
+build test generate protoc check-gen:
 	@$(DOCKER) build . \
 		--output $(OUTROOT) \
 		--target copy-products \

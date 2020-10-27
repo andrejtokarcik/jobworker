@@ -22,13 +22,19 @@ fmt:
 tidy:
 	$(GO) mod tidy
 
+.PHONY: generate mockery
+generate: mockery
+mockery:
+	$(MAKE) CODE_DIR=$(CURDIR) \
+		MOCKERY_OUTROOT=$(OUTROOT)/test/mocks -C test/mocks
+
 .PHONY: protoc
 protoc:
 	$(MAKE) PROTOC_OUTROOT=$(OUTROOT)/proto -C proto
 
 .PHONY: check-gen
 check-gen: OUTROOT := .
-check-gen: fmt tidy protoc
+check-gen: fmt tidy generate protoc
 	git diff --exit-code
 
 .PHONY: lint
