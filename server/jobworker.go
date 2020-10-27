@@ -26,7 +26,7 @@ func NewJobWorkerServer() *JobWorkerServer {
 
 type job struct {
 	Cmd
-	subjectName string
+	clientName string
 }
 
 func (server *JobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobRequest) (*pb.StartJobResponse, error) {
@@ -38,9 +38,14 @@ func (server *JobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 	cmd := server.cmdCreator.NewCmd(
 		req.Command.Dir, req.Command.Env, req.Command.Command, req.Command.Args,
 	)
-	subjectName := ctx.Value(clientSubjectKey{}).(pkix.Name).CommonName
 
-	server.jobs.Store(jobUuid, job{cmd, subjectName})
+	clientSubject := ctx.Value(clientSubjectKey{})
+	if clientSubject == nil {
+		return nil, status.Errorf(codes.Internal, "cannot determine client subject")
+	}
+	clientName := clientSubject.(pkix.Name).CommonName
+
+	server.jobs.Store(jobUuid, job{cmd, clientName})
 	cmd.Start()
 
 	response := &pb.StartJobResponse{
