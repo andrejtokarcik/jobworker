@@ -12,13 +12,6 @@ import (
 	"github.com/andrejtokarcik/jobworker/server/mocks"
 )
 
-var (
-	someCommand = "some-command"
-	someArgs    = []string{"--some-arg", "/some-path", "some-value"}
-	someDir     = "."
-	someEnv     = []string{"X=y"}
-)
-
 type serverTestSuite struct {
 	suite.Suite
 	mockCmdCreator *mocks.CmdCreator
@@ -35,19 +28,19 @@ func (suite *serverTestSuite) SetupTest() {
 }
 
 func (suite *serverTestSuite) TestStartJob() {
+	someCmdSpec := &server.CmdSpec{
+		Command: "some-command",
+		Args:    []string{"--some-arg", "some-value"},
+		Dir:     "/some-path",
+		Env:     []string{"X=y"},
+	}
+
 	req := &pb.StartJobRequest{
-		Command: &pb.CommandSpec{
-			Command: someCommand,
-			Args:    someArgs,
-			Dir:     someDir,
-			Env:     someEnv,
-		},
+		Command: someCmdSpec,
 	}
 
 	mockCmd := new(mocks.Cmd)
-	suite.mockCmdCreator.On(
-		"NewCmd", someDir, someEnv, someCommand, someArgs,
-	).Return(mockCmd).Once()
+	suite.mockCmdCreator.On("NewCmd", someCmdSpec).Return(mockCmd).Once()
 	mockCmd.On("Start").Return(make(<-chan server.CmdStatus)).Once()
 
 	_, err := suite.jobWorker.StartJob(suite.ctx, req)
