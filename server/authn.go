@@ -23,10 +23,10 @@ func AttachClientSubject(ctx context.Context, req interface{}, info *grpc.UnaryS
 		return nil, status.Error(codes.Unauthenticated, "unexpected peer transport credentials")
 	}
 
-	if len(tlsAuth.State.VerifiedChains) == 0 || len(tlsAuth.State.VerifiedChains[0]) == 0 {
+	if len(tlsAuth.State.PeerCertificates) == 0 {
 		return nil, status.Error(codes.Unauthenticated, "could not verify peer certificate")
 	}
 
-	newCtx := context.WithValue(ctx, clientSubjectKey{}, tlsAuth.State.VerifiedChains[0][0].Subject)
+	newCtx := context.WithValue(ctx, clientSubjectKey{}, tlsAuth.State.PeerCertificates[0].Subject)
 	return handler(newCtx, req)
 }
