@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 
 	"github.com/andrejtokarcik/jobworker/mtls"
 	"github.com/andrejtokarcik/jobworker/test"
@@ -17,11 +18,15 @@ type mTLSTestSuite struct {
 
 type mTLSTestCase struct {
 	clientCredsFiles mtls.CredsFiles
+	serverName string
 	expectedErr      error
 }
 
 func (suite *mTLSTestSuite) SetupSuite() {
-	suite.SetupBufconnWithDefaultCreds()
+	grpcServer := grpc.NewServer(
+		grpc.Creds(testdata.DefaultServerCreds()),
+	)
+	suite.SetupBufconn(grpcServer)
 }
 
 func (suite *mTLSTestSuite) TearDownSuite() {
@@ -34,7 +39,7 @@ func (suite *mTLSTestSuite) runTestCase(tc mTLSTestCase) {
 	)
 	suite.Require().Nil(err)
 
-	conn, err := suite.DialBufconn(clientCreds)
+	conn, err := suite.DialBufconn(tc.serverName, clientCreds)
 	if conn != nil {
 		defer conn.Close()
 	}
@@ -50,6 +55,7 @@ func (suite *mTLSTestSuite) runTestCase(tc mTLSTestCase) {
 func validTestCase() mTLSTestCase {
 	return mTLSTestCase{
 		clientCredsFiles: testdata.DefaultClientCredsFiles(),
+		serverName: "server1",
 		expectedErr:      nil,
 	}
 }
@@ -71,6 +77,13 @@ func (suite *mTLSTestSuite) TestSelfSignedClientCert() {
 	tc.clientCredsFiles.Cert = "self-signed.crt"
 	tc.clientCredsFiles.Key = "self-signed.key"
 	tc.expectedErr = errors.New("context deadline exceeded")
+	suite.runTestCase(tc)
+}
+
+func (suite *mTLSTestSuite) TestInvalidServerName() {
+	tc := validTestCase()
+	tc.serverName = "server2"
+	tc.expectedErr = errors.New("x509: certificate is valid for server1, not server2")
 	suite.runTestCase(tc)
 }
 

@@ -2,4 +2,4 @@ subjectAltName = @alt_names
 
 [alt_names]
 DNS.1 = $ENV::DNSNAME
-IP.1 = 0.0.0.0
+IP.1 = 127.0.0.1

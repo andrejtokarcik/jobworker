@@ -11,8 +11,6 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/andrejtokarcik/jobworker/client"
-	"github.com/andrejtokarcik/jobworker/server"
-	"github.com/andrejtokarcik/jobworker/test/data"
 )
 
 type BufconnConfig struct {
@@ -45,14 +43,6 @@ func (suite *BufconnSuite) SetupBufconn(grpcServer *grpc.Server) {
 	}()
 }
 
-func NewServerWithDefaultCreds() *grpc.Server {
-	return server.New(grpc.Creds(testdata.DefaultServerCreds()))
-}
-
-func (suite *BufconnSuite) SetupBufconnWithDefaultCreds() {
-	suite.SetupBufconn(NewServerWithDefaultCreds())
-}
-
 func (suite *BufconnSuite) TearDownBufconn() {
 	suite.listener.Close()
 	suite.grpcServer.Stop()
@@ -62,19 +52,15 @@ func (suite *BufconnSuite) contextDialer(context.Context, string) (net.Conn, err
 	return suite.listener.Dial()
 }
 
-func (suite *BufconnSuite) DialBufconn(creds credentials.TransportCredentials, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (suite *BufconnSuite) DialBufconn(serverName string, creds credentials.TransportCredentials, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	return client.DialContextWithTimeout(
 		context.Background(),
 		suite.ClientTimeout,
-		"0.0.0.0",
+		serverName,
 		append(
 			opts,
 			grpc.WithContextDialer(suite.contextDialer),
 			grpc.WithTransportCredentials(creds),
 		)...,
 	)
-}
-
-func (suite *BufconnSuite) DialBufconnWithDefaultCreds() (*grpc.ClientConn, error) {
-	return suite.DialBufconn(testdata.DefaultClientCreds())
 }

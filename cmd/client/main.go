@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&serverAddress, "server", "0.0.0.0:50051", "Address of the server to connect to")
+	flag.StringVar(&serverAddress, "server", "127.0.0.1:50051", "Address of the server to connect to")
 	flag.DurationVar(&connTimeout, "timeout", 5*time.Second, "Connection timeout")
 
 	flag.StringVar(&credsFiles.Cert, "client-cert", "client.crt", "Certificate file to use for the client")
