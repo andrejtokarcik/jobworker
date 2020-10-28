@@ -12,14 +12,14 @@ import (
 )
 
 var (
-	serverAddress  string
-	timeoutSeconds int
-	credsFiles     mtls.CredsFiles
+	serverAddress string
+	connTimeout   time.Duration
+	credsFiles    mtls.CredsFiles
 )
 
 func init() {
 	flag.StringVar(&serverAddress, "server", "0.0.0.0:50051", "Address of the server to connect to")
-	flag.IntVar(&timeoutSeconds, "timeout", 5, "Connection timeout in seconds")
+	flag.DurationVar(&connTimeout, "timeout", 5*time.Second, "Connection timeout")
 
 	flag.StringVar(&credsFiles.Cert, "client-cert", "client.crt", "Certificate file to use for the client")
 	flag.StringVar(&credsFiles.Key, "client-key", "client.key", "Private key file to use for the client")
@@ -36,7 +36,7 @@ func main() {
 
 	conn, err := client.Dial(
 		serverAddress,
-		time.Duration(timeoutSeconds)*time.Second,
+		connTimeout,
 		grpc.WithTransportCredentials(creds),
 	)
 	if err != nil {
