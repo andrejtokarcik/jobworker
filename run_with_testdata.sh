@@ -3,7 +3,7 @@
 trap 'kill $SERVER_PID' TERM INT EXIT
 export GRPC_GO_LOG_SEVERITY_LEVEL=warning
 
-CERT_DIR=${CERT_DIR:-./test/data/x509}
+CERT_DIR=${CERT_DIR:-./mtls/testdata}
 
 ./bin/server \
     -server-cert $CERT_DIR/server-ca/server1.crt \

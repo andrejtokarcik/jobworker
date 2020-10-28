@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/andrejtokarcik/jobworker/client"
@@ -52,7 +51,7 @@ func (suite *BufconnSuite) contextDialer(context.Context, string) (net.Conn, err
 	return suite.listener.Dial()
 }
 
-func (suite *BufconnSuite) DialBufconn(serverName string, creds credentials.TransportCredentials, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (suite *BufconnSuite) DialBufconn(serverName string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	return client.DialContextWithTimeout(
 		context.Background(),
 		suite.ClientTimeout,
@@ -60,7 +59,6 @@ func (suite *BufconnSuite) DialBufconn(serverName string, creds credentials.Tran
 		append(
 			opts,
 			grpc.WithContextDialer(suite.contextDialer),
-			grpc.WithTransportCredentials(creds),
 		)...,
 	)
 }

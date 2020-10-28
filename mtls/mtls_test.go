@@ -9,7 +9,6 @@ import (
 
 	"github.com/andrejtokarcik/jobworker/mtls"
 	"github.com/andrejtokarcik/jobworker/test"
-	"github.com/andrejtokarcik/jobworker/test/data"
 )
 
 type mTLSTestSuite struct {
@@ -18,14 +17,21 @@ type mTLSTestSuite struct {
 
 type mTLSTestCase struct {
 	clientCredsFiles mtls.CredsFiles
-	serverName string
+	serverName       string
 	expectedErr      error
 }
 
 func (suite *mTLSTestSuite) SetupSuite() {
-	grpcServer := grpc.NewServer(
-		grpc.Creds(testdata.DefaultServerCreds()),
-	)
+	serverCreds, err := mtls.NewServerCreds(mtls.CredsFiles{
+		Cert:       "testdata/server-ca/server1.crt",
+		Key:        "testdata/server-ca/server1.key",
+		PeerCACert: "testdata/client-ca.crt",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	grpcServer := grpc.NewServer(grpc.Creds(serverCreds))
 	suite.SetupBufconn(grpcServer)
 }
 
@@ -34,12 +40,13 @@ func (suite *mTLSTestSuite) TearDownSuite() {
 }
 
 func (suite *mTLSTestSuite) runTestCase(tc mTLSTestCase) {
-	clientCreds, err := mtls.NewClientCreds(
-		testdata.CredsFilesPaths(tc.clientCredsFiles),
-	)
+	clientCreds, err := mtls.NewClientCreds(tc.clientCredsFiles)
 	suite.Require().Nil(err)
 
-	conn, err := suite.DialBufconn(tc.serverName, clientCreds)
+	conn, err := suite.DialBufconn(
+		tc.serverName,
+		grpc.WithTransportCredentials(clientCreds),
+	)
 	if conn != nil {
 		defer conn.Close()
 	}
@@ -54,9 +61,13 @@ func (suite *mTLSTestSuite) runTestCase(tc mTLSTestCase) {
 
 func validTestCase() mTLSTestCase {
 	return mTLSTestCase{
-		clientCredsFiles: testdata.DefaultClientCredsFiles(),
-		serverName: "server1",
-		expectedErr:      nil,
+		clientCredsFiles: mtls.CredsFiles{
+			Cert:       "testdata/client-ca/client1.crt",
+			Key:        "testdata/client-ca/client1.key",
+			PeerCACert: "testdata/server-ca.crt",
+		},
+		serverName:  "server1",
+		expectedErr: nil,
 	}
 }
 
@@ -67,15 +78,15 @@ func (suite *mTLSTestSuite) TestValidCreds() {
 
 func (suite *mTLSTestSuite) TestWrongServerCA() {
 	tc := validTestCase()
-	tc.clientCredsFiles.PeerCACert = "server-ca2.crt"
+	tc.clientCredsFiles.PeerCACert = "testdata/server-ca2.crt"
 	tc.expectedErr = errors.New("x509: certificate signed by unknown authority")
 	suite.runTestCase(tc)
 }
 
 func (suite *mTLSTestSuite) TestSelfSignedClientCert() {
 	tc := validTestCase()
-	tc.clientCredsFiles.Cert = "self-signed.crt"
-	tc.clientCredsFiles.Key = "self-signed.key"
+	tc.clientCredsFiles.Cert = "testdata/self-signed.crt"
+	tc.clientCredsFiles.Key = "testdata/self-signed.key"
 	tc.expectedErr = errors.New("context deadline exceeded")
 	suite.runTestCase(tc)
 }
