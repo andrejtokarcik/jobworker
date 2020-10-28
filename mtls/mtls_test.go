@@ -8,11 +8,10 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/andrejtokarcik/jobworker/mtls"
-	"github.com/andrejtokarcik/jobworker/test"
 )
 
 type mTLSTestSuite struct {
-	test.BufconnSuite
+	BufconnSuite
 }
 
 type mTLSTestCase struct {
@@ -31,8 +30,7 @@ func (suite *mTLSTestSuite) SetupSuite() {
 		panic(err)
 	}
 
-	grpcServer := grpc.NewServer(grpc.Creds(serverCreds))
-	suite.SetupBufconn(grpcServer)
+	suite.SetupBufconn(grpc.Creds(serverCreds))
 }
 
 func (suite *mTLSTestSuite) TearDownSuite() {
@@ -41,7 +39,7 @@ func (suite *mTLSTestSuite) TearDownSuite() {
 
 func (suite *mTLSTestSuite) runTestCase(tc mTLSTestCase) {
 	clientCreds, err := mtls.NewClientCreds(tc.clientCredsFiles)
-	suite.Require().Nil(err)
+	suite.Require().Nil(err, err)
 
 	conn, err := suite.DialBufconn(
 		tc.serverName,
@@ -52,7 +50,7 @@ func (suite *mTLSTestSuite) runTestCase(tc mTLSTestCase) {
 	}
 
 	if tc.expectedErr == nil {
-		suite.Require().Nil(err)
+		suite.Require().Nil(err, err)
 	} else {
 		suite.Require().NotNil(err)
 		suite.Assert().Contains(err.Error(), tc.expectedErr.Error())
@@ -99,5 +97,5 @@ func (suite *mTLSTestSuite) TestInvalidServerName() {
 }
 
 func TestMutualTLS(t *testing.T) {
-	suite.Run(t, &mTLSTestSuite{test.NewBufconnSuite()})
+	suite.Run(t, &mTLSTestSuite{NewBufconnSuite()})
 }

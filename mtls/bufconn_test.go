@@ -1,4 +1,4 @@
-package test
+package mtls_test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/andrejtokarcik/jobworker/client"
+	"github.com/andrejtokarcik/jobworker/server"
 )
 
 type BufconnConfig struct {
@@ -32,8 +33,8 @@ func NewBufconnSuite() (suite BufconnSuite) {
 	return
 }
 
-func (suite *BufconnSuite) SetupBufconn(grpcServer *grpc.Server) {
-	suite.grpcServer = grpcServer
+func (suite *BufconnSuite) SetupBufconn(opts ...grpc.ServerOption) {
+	suite.grpcServer = server.New(opts...)
 	suite.listener = bufconn.Listen(suite.BufSize)
 	go func() {
 		if err := suite.grpcServer.Serve(suite.listener); err != nil {
