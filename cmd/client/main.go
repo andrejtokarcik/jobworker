@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"time"
@@ -34,9 +35,10 @@ func main() {
 		log.Fatal("Failed to load mTLS credentials: ", err)
 	}
 
-	conn, err := client.Dial(
-		serverAddress,
+	conn, err := client.DialContextWithTimeout(
+		context.Background(),
 		connTimeout,
+		serverAddress,
 		grpc.WithTransportCredentials(creds),
 	)
 	if err != nil {

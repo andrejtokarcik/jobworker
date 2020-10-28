@@ -63,9 +63,10 @@ func (suite *BufconnSuite) contextDialer(context.Context, string) (net.Conn, err
 }
 
 func (suite *BufconnSuite) DialBufconn(creds credentials.TransportCredentials, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	return client.Dial(
-		"0.0.0.0",
+	return client.DialContextWithTimeout(
+		context.Background(),
 		suite.ClientTimeout,
+		"0.0.0.0",
 		append(
 			opts,
 			grpc.WithContextDialer(suite.contextDialer),

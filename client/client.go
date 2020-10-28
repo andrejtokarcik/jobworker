@@ -7,12 +7,12 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Dial(target string, timeout time.Duration, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+func DialContextWithTimeout(ctx context.Context, timeout time.Duration, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	return grpc.DialContext(
-		ctx,
+		ctxWithTimeout,
 		target,
 		append(
 			opts,
