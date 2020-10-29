@@ -6,11 +6,14 @@ import (
 	pb "github.com/andrejtokarcik/jobworker/proto"
 )
 
-func New(opts ...grpc.ServerOption) *grpc.Server {
+func New(filter RPCCallerFilter, opts ...grpc.ServerOption) *grpc.Server {
 	server := grpc.NewServer(
 		append(
 			opts,
-			grpc.UnaryInterceptor(AttachClientSubject),
+			grpc.ChainUnaryInterceptor(
+				AttachClientSubject,
+				ApplyRPCCallerFilter(filter),
+			),
 		)...,
 	)
 	pb.RegisterJobWorkerServer(server, NewJobWorkerServer())
