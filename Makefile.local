@@ -12,7 +12,7 @@ server client:
 
 .PHONY: test
 test:
-	$(GO) test -v -race ./...
+	$(GO) test -v -count=1 -race ./...
 
 .PHONY: fmt
 fmt:
