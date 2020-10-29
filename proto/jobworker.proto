@@ -24,18 +24,25 @@ message StartJobRequest {
 }
 
 message StartJobResponse {
-  // A UUID in its standard 8-4-4-4-12 hexadecimal representation
-  string job_uuid = 1;
+  // JobUUID specifies the job's UUID in its standard hexadecimal
+  // representation
+  string job_uuid = 1 [
+    (gogoproto.customname) = "JobUUID"
+  ];
 }
 
 message StopJobRequest {
-  string job_uuid = 1;
+  string job_uuid = 1 [
+    (gogoproto.customname) = "JobUUID"
+  ];
 }
 
 message StopJobResponse {}
 
 message GetJobRequest {
-  string job_uuid = 1;
+  string job_uuid = 1 [
+    (gogoproto.customname) = "JobUUID"
+  ];
   bool with_logs = 2;
 }
 

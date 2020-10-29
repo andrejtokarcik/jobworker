@@ -36,8 +36,8 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot generate a new UUID: %v", err)
 	}
-	jobUuid := uuidObj.String()
-	if jobUuid == "" {
+	jobUUID := uuidObj.String()
+	if jobUUID == "" {
 		return nil, status.Errorf(codes.Internal, "generated UUID is invalid")
 	}
 
@@ -49,17 +49,17 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 	}
 	clientName := clientSubject.(pkix.Name).CommonName
 
-	server.jobs.Store(jobUuid, job{cmd, clientName})
+	server.jobs.Store(jobUUID, job{cmd, clientName})
 	cmd.Start()
 
 	response := &pb.StartJobResponse{
-		JobUuid: jobUuid,
+		JobUUID: jobUUID,
 	}
 	return response, nil
 }
 
 func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobRequest) (*pb.StopJobResponse, error) {
-	value, ok := server.jobs.Load(req.JobUuid)
+	value, ok := server.jobs.Load(req.JobUUID)
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
 	}
@@ -71,7 +71,7 @@ func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobReque
 }
 
 func (server *jobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest) (*pb.GetJobResponse, error) {
-	value, ok := server.jobs.Load(req.JobUuid)
+	value, ok := server.jobs.Load(req.JobUUID)
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
 	}
