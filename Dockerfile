@@ -45,7 +45,8 @@ FROM protoc-base AS gen-base
 COPY --from=mockery-base /usr/local/bin/mockery /usr/bin/mockery
 
 FROM gen-base AS gen
-RUN --mount=target=. \
+RUN --mount=target=.,readwrite \
+    --mount=type=cache,target=/root/.cache/go-build \
     $MAKELOCAL gen
 
 FROM gen-base AS check-gen

@@ -9,7 +9,7 @@ import (
 
 	pb "github.com/andrejtokarcik/jobworker/proto"
 	"github.com/andrejtokarcik/jobworker/server"
-	"github.com/andrejtokarcik/jobworker/test/mocks"
+	"github.com/andrejtokarcik/jobworker/server/mocks"
 )
 
 var (
