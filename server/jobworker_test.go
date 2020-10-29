@@ -15,7 +15,7 @@ import (
 type serverTestSuite struct {
 	suite.Suite
 	mockCmdCreator *mocks.CmdCreator
-	jobWorker      *server.JobWorkerServer
+	jobWorker      pb.JobWorkerServer
 	ctx            context.Context
 }
 

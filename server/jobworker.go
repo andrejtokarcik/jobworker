@@ -14,14 +14,14 @@ import (
 	pb "github.com/andrejtokarcik/jobworker/proto"
 )
 
-type JobWorkerServer struct {
+type jobWorkerServer struct {
 	pb.UnimplementedJobWorkerServer
 	cmdCreator CmdCreator
 	jobs       sync.Map
 }
 
-func NewJobWorkerServer() *JobWorkerServer {
-	return &JobWorkerServer{
+func NewJobWorkerServer() pb.JobWorkerServer {
+	return &jobWorkerServer{
 		cmdCreator: goCmdCreator{},
 	}
 }
@@ -31,7 +31,7 @@ type job struct {
 	clientName string
 }
 
-func (server *JobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobRequest) (*pb.StartJobResponse, error) {
+func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobRequest) (*pb.StartJobResponse, error) {
 	jobUuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot generate a new UUID: %v", err)
@@ -54,7 +54,7 @@ func (server *JobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 	return response, nil
 }
 
-func (server *JobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobRequest) (*pb.StopJobResponse, error) {
+func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobRequest) (*pb.StopJobResponse, error) {
 	value, ok := server.jobs.Load(req.JobUuid)
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
@@ -66,7 +66,7 @@ func (server *JobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobReque
 	return &pb.StopJobResponse{}, nil
 }
 
-func (server *JobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest) (*pb.GetJobResponse, error) {
+func (server *jobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest) (*pb.GetJobResponse, error) {
 	value, ok := server.jobs.Load(req.JobUuid)
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
