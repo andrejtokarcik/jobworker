@@ -32,9 +32,13 @@ type job struct {
 }
 
 func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobRequest) (*pb.StartJobResponse, error) {
-	jobUuid, err := uuid.NewRandom()
+	uuidObj, err := uuid.NewRandom()
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot generate a new UUID: %v", err)
+	}
+	jobUuid := uuidObj.String()
+	if jobUuid == "" {
+		return nil, status.Errorf(codes.Internal, "generated UUID is invalid")
 	}
 
 	cmd := server.cmdCreator.NewCmd(req.Command)
@@ -49,7 +53,7 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 	cmd.Start()
 
 	response := &pb.StartJobResponse{
-		JobUuid: jobUuid.String(),
+		JobUuid: jobUuid,
 	}
 	return response, nil
 }
