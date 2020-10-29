@@ -35,12 +35,13 @@ func (goCmdCreator) NewCmd(spec *CmdSpec) Cmd {
 	return goCmd{c}
 }
 
-func (cmd goCmd) Spec() (spec *CmdSpec) {
-	spec.Command = cmd.Name
-	spec.Args = cmd.Args
-	spec.Env = cmd.Env
-	spec.Dir = cmd.Dir
-	return
+func (cmd goCmd) Spec() *CmdSpec {
+	return &CmdSpec{
+		Command: cmd.Name,
+		Args:    cmd.Args,
+		Env:     cmd.Env,
+		Dir:     cmd.Dir,
+	}
 }
 
 func (cmd goCmd) State() CmdState {

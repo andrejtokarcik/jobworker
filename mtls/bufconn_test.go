@@ -25,12 +25,13 @@ type BufconnSuite struct {
 	listener   *bufconn.Listener
 }
 
-func NewBufconnSuite() (suite BufconnSuite) {
-	suite.BufconnConfig = BufconnConfig{
-		BufSize:       1024 * 1024,
-		ClientTimeout: 1 * time.Second,
+func NewBufconnSuite() BufconnSuite {
+	return BufconnSuite{
+		BufconnConfig: BufconnConfig{
+			BufSize:       1024 * 1024,
+			ClientTimeout: 1 * time.Second,
+		},
 	}
-	return
 }
 
 func (suite *BufconnSuite) SetupBufconn(opts ...grpc.ServerOption) {
