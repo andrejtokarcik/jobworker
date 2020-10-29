@@ -46,20 +46,6 @@ func (_m *Cmd) Start() <-chan cmd.Status {
 	return r0
 }
 
-// State provides a mock function with given fields:
-func (_m *Cmd) State() proto.GetJobResponse_State {
-	ret := _m.Called()
-
-	var r0 proto.GetJobResponse_State
-	if rf, ok := ret.Get(0).(func() proto.GetJobResponse_State); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(proto.GetJobResponse_State)
-	}
-
-	return r0
-}
-
 // Status provides a mock function with given fields:
 func (_m *Cmd) Status() cmd.Status {
 	ret := _m.Called()

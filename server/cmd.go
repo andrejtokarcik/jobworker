@@ -19,7 +19,6 @@ type Cmd interface {
 	Status() CmdStatus
 	Stop() error
 	Spec() *CmdSpec
-	State() CmdState
 }
 
 type goCmdCreator struct{}
@@ -44,9 +43,7 @@ func (cmd goCmd) Spec() *CmdSpec {
 	}
 }
 
-func (cmd goCmd) State() CmdState {
-	status := cmd.Status()
-
+func determineState(status CmdStatus) CmdState {
 	if status.Error != nil {
 		return pb.GetJobResponse_FAILED
 	}

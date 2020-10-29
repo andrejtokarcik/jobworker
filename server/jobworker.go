@@ -73,29 +73,30 @@ func (server *JobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest
 	}
 
 	cmd := value.(job).Cmd
+	cmdStatus := cmd.Status()
 
-	startedAt, err := unixNanoToTimestamp(cmd.Status().StartTs)
+	startedAt, err := unixNanoToTimestamp(cmdStatus.StartTs)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot convert job start to timestamp: %v", err)
 	}
 
-	endedAt, err := unixNanoToTimestamp(cmd.Status().StopTs)
+	endedAt, err := unixNanoToTimestamp(cmdStatus.StopTs)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot convert job end to timestamp: %v", err)
 	}
 
 	resp := &pb.GetJobResponse{
 		Command:   cmd.Spec(),
-		State:     cmd.State(),
-		ExitCode:  int32(cmd.Status().Exit),
+		State:     determineState(cmdStatus),
+		ExitCode:  int32(cmdStatus.Exit),
 		StartedAt: startedAt,
 		EndedAt:   endedAt,
-		PID:       uint32(cmd.Status().PID),
+		PID:       uint32(cmdStatus.PID),
 	}
 
 	if req.WithLogs {
-		resp.Stdout = cmd.Status().Stdout
-		resp.Stderr = cmd.Status().Stderr
+		resp.Stdout = cmdStatus.Stdout
+		resp.Stderr = cmdStatus.Stderr
 	}
 
 	return resp, nil
