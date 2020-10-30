@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
-	"github.com/andrejtokarcik/jobworker/client"
 	"github.com/andrejtokarcik/jobworker/mtls"
 	pb "github.com/andrejtokarcik/jobworker/proto"
 )
@@ -28,7 +27,7 @@ func CLI(ctx context.Context) *cobra.Command {
 	}
 
 	cmdRoot.PersistentFlags().StringVarP(&serverAddress, "server", "s", "127.0.0.1:50051", "address of the server to connect to")
-	cmdRoot.PersistentFlags().DurationVar(&timeout, "timeout", 5*time.Second, "connection & RPC timeout")
+	cmdRoot.PersistentFlags().DurationVar(&timeout, "timeout", 5*time.Second, "maximum time to get RPC response")
 	cmdRoot.PersistentFlags().StringVar(&credsFiles.Cert, "client-cert", "client.crt", "certificate file to use for the client")
 	cmdRoot.PersistentFlags().StringVar(&credsFiles.Key, "client-key", "client.key", "private key file to use for the client")
 	cmdRoot.PersistentFlags().StringVar(&credsFiles.PeerCACert, "server-ca-cert", "server-ca.crt", "certificate file of the CA to authenticate the server")
@@ -107,19 +106,19 @@ func cmdGetJob(ctx context.Context) *cobra.Command {
 
 func withJobWorkerClient(ctx context.Context, callRPC func(context.Context, pb.JobWorkerClient, []string)) func(*cobra.Command, []string) {
 	return func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
-
 		creds, err := mtls.NewClientCreds(credsFiles)
 		if err != nil {
 			log.Fatal("Failed to load mTLS credentials: ", err)
 		}
 
-		conn, err := client.DialContextWithTimeout(
-			context.Background(),
-			timeout,
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		conn, err := grpc.DialContext(
+			ctx,
 			serverAddress,
 			grpc.WithTransportCredentials(creds),
+			grpc.WithReturnConnectionError(),
 		)
 		if err != nil {
 			log.Fatal("Failed to dial server: ", err)
