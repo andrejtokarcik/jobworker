@@ -15,10 +15,10 @@ type CmdCreator interface {
 }
 
 type Cmd interface {
+	Spec() *CmdSpec
 	Start() <-chan CmdStatus
 	Status() CmdStatus
 	Stop() error
-	Spec() *CmdSpec
 }
 
 type goCmdCreator struct{}
@@ -43,7 +43,11 @@ func (cmd goCmd) Spec() *CmdSpec {
 	}
 }
 
-func determineState(status CmdStatus) CmdState {
+func determineState(stopped bool, status CmdStatus) CmdState {
+	if stopped {
+		return pb.GetJobResponse_STOPPED
+	}
+
 	if status.Error != nil {
 		return pb.GetJobResponse_FAILED
 	}
@@ -58,7 +62,7 @@ func determineState(status CmdStatus) CmdState {
 
 	if status.Complete {
 		return pb.GetJobResponse_COMPLETED
-	} else {
-		return pb.GetJobResponse_STOPPED
 	}
+
+	return pb.GetJobResponse_UNKNOWN
 }
