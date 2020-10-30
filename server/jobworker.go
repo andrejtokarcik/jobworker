@@ -64,8 +64,10 @@ func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobReque
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
 	}
 
-	// Stop's error is irrelevant: even when it occurs, it need not be handled
-	_ = value.(job).Stop()
+	err := value.(job).Stop()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to send a stop signal to the job: %v", err)
+	}
 
 	return &pb.StopJobResponse{}, nil
 }
