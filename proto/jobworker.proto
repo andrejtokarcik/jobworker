@@ -27,7 +27,7 @@ message StartJobRequest {
 
 message StartJobResponse {
   // JobUUID specifies the job's UUID in its standard hexadecimal
-  // representation
+  // representation.
   string job_uuid = 1 [
     (gogoproto.customname) = "JobUUID"
   ];
@@ -56,29 +56,30 @@ message GetJobResponse {
     RUNNING = 1;
     COMPLETED = 2;
     STOPPED = 3;
-
     // The command either failed to start (it never ran) or it started
     // but was terminated unexpectedly (probably signaled)
     FAILED = 4;
-
     // The command has not started yet
     PENDING = 5;
   };
   State state = 2;
+  // StateDetails provides additional details about the job's state.
+  string state_details = 3;
 
-  int32 exit_code = 3;
+  int32 exit_code = 4;
 
-  google.protobuf.Timestamp started_at = 4;
-  google.protobuf.Timestamp ended_at = 5;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp ended_at = 6;
 
   // proc(5): "On 64-bit systems, pid_max can be set to any value up to 2^22"
-  uint32 pid = 6 [
+  uint32 pid = 7 [
     (gogoproto.customname) = "PID"
   ];
 
   // Populated only if with_logs set to true
-  repeated string stdout = 7;
-  repeated string stderr = 8;
+  repeated string stdout = 8;
+  repeated string stderr = 9;
+
 }
 
 message ListJobsRequest {}
