@@ -2,8 +2,11 @@ OUTROOT ?= .
 
 GO ?= go
 GO_LINT ?= golangci-lint
+MOCKERY ?= mockery
 
 MAKE := $(MAKE) -f Makefile.local
+
+CODE_DIRS ?= $(shell find . -type f -name '*.go' -printf '%h\n' | sort -u)
 
 .PHONY: build server client
 build: server client
@@ -22,13 +25,22 @@ fmt:
 tidy:
 	$(GO) mod tidy
 
+.PHONY: mockery
+mockery:
+	for code_dir in $(CODE_DIRS) ; do \
+		$(MOCKERY) --quiet --name '.*' --dir $$code_dir --output $(OUTROOT)/$$code_dir/mocks ; \
+	done
+
 .PHONY: protoc
 protoc:
-	$(MAKE) PROTOC_OUTROOT=$(OUTROOT)/proto -C proto
+	$(MAKE) PROTOC_OUTROOT=$(OUTROOT)/proto -C proto clean all
+
+.PHONY: gen
+gen: protoc mockery
 
 .PHONY: check-gen
 check-gen: OUTROOT := .
-check-gen: fmt tidy protoc
+check-gen: gen fmt tidy
 	git diff --exit-code
 
 .PHONY: lint

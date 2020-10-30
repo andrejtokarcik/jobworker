@@ -1,7 +1,7 @@
-PROTOS := $(wildcard *.proto)
-
 PROTOC ?= protoc
 PROTOC_OUTROOT ?= .
+
+PROTOS := $(wildcard *.proto)
 PROTOC_OUTPUTS := $(PROTOS:%.proto=$(PROTOC_OUTROOT)/%.pb.go)
 
 PROTOC_DEPS := Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types
@@ -11,7 +11,8 @@ all: $(PROTOC_OUTPUTS)
 
 $(PROTOC_OUTPUTS): $(PROTOC_OUTROOT)/%.pb.go: %.proto
 	-mkdir -p $(PROTOC_OUTROOT)
-	$(PROTOC) --gogo_out=plugins=grpc,$(PROTOC_DEPS):$(PROTOC_OUTROOT) $<
+	$(PROTOC) -I=. -I=$(PROTOC_INCLUDE) \
+		--gogofaster_out=plugins=grpc,$(PROTOC_DEPS):$(PROTOC_OUTROOT) $<
 
 .PHONY: clean
 clean:
