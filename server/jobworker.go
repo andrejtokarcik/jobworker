@@ -28,8 +28,8 @@ func NewJobWorkerServer() pb.JobWorkerServer {
 
 type job struct {
 	Cmd
-	clientName string
-	stopped    bool
+	ownerName string
+	stopped   bool
 }
 
 func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobRequest) (*pb.StartJobResponse, error) {
@@ -48,9 +48,9 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 	}
 
 	job := job{
-		Cmd:        server.cmdCreator.NewCmd(req.Command),
-		clientName: clientSubject.(pkix.Name).CommonName,
-		stopped:    false,
+		Cmd:       server.cmdCreator.NewCmd(req.Command),
+		ownerName: clientSubject.(pkix.Name).CommonName,
+		stopped:   false,
 	}
 	server.jobs.Store(jobUUID, job)
 	job.Start()
@@ -62,14 +62,22 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 }
 
 func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobRequest) (*pb.StopJobResponse, error) {
+	clientSubject := ctx.Value(clientSubjectKey{})
+	if clientSubject == nil {
+		return nil, status.Errorf(codes.Internal, "cannot determine client subject")
+	}
+
 	value, ok := server.jobs.Load(req.JobUUID)
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
 	}
-
 	job := value.(job)
-	state := determineState(job.stopped, job.Status())
-	if state != pb.GetJobResponse_RUNNING {
+
+	if job.ownerName != clientSubject.(pkix.Name).CommonName {
+		return nil, status.Errorf(codes.PermissionDenied, "not allowed to stop this job")
+	}
+
+	if state := determineState(job.stopped, job.Status()); state != pb.GetJobResponse_RUNNING {
 		return nil, status.Errorf(codes.FailedPrecondition, "job process is not running: %v", state)
 	}
 
