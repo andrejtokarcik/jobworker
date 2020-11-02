@@ -4,6 +4,7 @@ package jobworker;
 option go_package = "proto";
 
 import "google/protobuf/timestamp.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 service JobWorker {
   rpc StartJob(StartJobRequest) returns (StartJobResponse);
@@ -23,25 +24,32 @@ message StartJobRequest {
 }
 
 message StartJobResponse {
-  // A UUID in its standard 8-4-4-4-12 hexadecimal representation
-  string job_uuid = 1;
+  // JobUUID specifies the job's UUID in its standard hexadecimal
+  // representation
+  string job_uuid = 1 [
+    (gogoproto.customname) = "JobUUID"
+  ];
 }
 
 message StopJobRequest {
-  string job_uuid = 1;
+  string job_uuid = 1 [
+    (gogoproto.customname) = "JobUUID"
+  ];
 }
 
 message StopJobResponse {}
 
 message GetJobRequest {
-  string job_uuid = 1;
+  string job_uuid = 1 [
+    (gogoproto.customname) = "JobUUID"
+  ];
   bool with_logs = 2;
 }
 
 message GetJobResponse {
   CommandSpec command = 1;
 
-  enum Status {
+  enum State {
     UNKNOWN = 0;
     RUNNING = 1;
     COMPLETED = 2;
@@ -54,16 +62,17 @@ message GetJobResponse {
     // The command has not started yet
     PENDING = 5;
   };
-  Status status = 2;
+  State state = 2;
 
-  // Equals -1 if the command execution has not finished
   int32 exit_code = 3;
 
   google.protobuf.Timestamp started_at = 4;
   google.protobuf.Timestamp ended_at = 5;
 
   // proc(5): "On 64-bit systems, pid_max can be set to any value up to 2^22"
-  uint32 pid = 6;
+  uint32 pid = 6 [
+    (gogoproto.customname) = "PID"
+  ];
 
   // Populated only if with_logs set to true
   repeated string stdout = 7;
