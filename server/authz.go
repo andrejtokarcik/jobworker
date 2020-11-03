@@ -9,10 +9,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RPCCallerFilter is a function that returns true if the given client
-// (identified by a certificate subject) should be allowed to call the
-// given RPC method, false otherwise.
-type RPCCallerFilter func(pkix.Name, *grpc.UnaryServerInfo) bool
+// ClientSubject identifies a client during a communication with the server.
+type ClientSubject = pkix.Name
+
+// RPCCallerFilter is a function that returns true if the given client should
+// be allowed to call the given RPC method, false otherwise.
+type RPCCallerFilter func(ClientSubject, *grpc.UnaryServerInfo) bool
 
 // ApplyRPCCallerFilter returns a unary server interceptor that may reject
 // a client with "permission denied" based on the given RPCCallerFilter.
@@ -23,7 +25,7 @@ func ApplyRPCCallerFilter(filter RPCCallerFilter) grpc.UnaryServerInterceptor {
 			return nil, status.Errorf(codes.Internal, "cannot determine client subject")
 		}
 
-		if !filter(value.(pkix.Name), info) {
+		if !filter(value.(ClientSubject), info) {
 			return nil, status.Errorf(codes.PermissionDenied, "not allowed to call this RPC method")
 		}
 		return handler(ctx, req)

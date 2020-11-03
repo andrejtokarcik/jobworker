@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/x509/pkix"
 	"flag"
 	"fmt"
 	"log"
@@ -48,7 +47,7 @@ func main() {
 
 // XXX The rules encoded in filterRPCCallers would be ordinarily inferred
 // from a configuration file, e.g. by means of https://github.com/spf13/viper
-func filterRPCCallers(client pkix.Name, rpcInfo *grpc.UnaryServerInfo) bool {
+func filterRPCCallers(client server.ClientSubject, rpcInfo *grpc.UnaryServerInfo) bool {
 	switch rpcInfo.FullMethod {
 	case jobWorkerMethod("StartJob"):
 		return client.CommonName != "client2"

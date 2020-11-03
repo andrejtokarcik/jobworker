@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/x509/pkix"
 	"sync"
 	"time"
 
@@ -49,7 +48,7 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 
 	job := job{
 		Cmd:       server.cmdCreator.NewCmd(req.Command),
-		ownerName: clientSubject.(pkix.Name).CommonName,
+		ownerName: clientSubject.(ClientSubject).CommonName,
 		stopped:   false,
 	}
 	server.jobs.Store(jobUUID, job)
@@ -73,7 +72,7 @@ func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobReque
 	}
 	job := value.(job)
 
-	if job.ownerName != clientSubject.(pkix.Name).CommonName {
+	if job.ownerName != clientSubject.(ClientSubject).CommonName {
 		return nil, status.Errorf(codes.PermissionDenied, "not allowed to stop this job")
 	}
 
