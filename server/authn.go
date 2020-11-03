@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/x509/pkix"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -11,6 +12,9 @@ import (
 )
 
 type clientSubjectKey struct{}
+
+// ClientSubject identifies a client during a communication with the server.
+type ClientSubject = pkix.Name
 
 func AttachClientSubject(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	p, ok := peer.FromContext(ctx)
@@ -29,4 +33,18 @@ func AttachClientSubject(ctx context.Context, req interface{}, info *grpc.UnaryS
 
 	newCtx := context.WithValue(ctx, clientSubjectKey{}, tlsAuth.State.PeerCertificates[0].Subject)
 	return handler(newCtx, req)
+}
+
+func getClientSubject(ctx context.Context) (ClientSubject, error) {
+	value := ctx.Value(clientSubjectKey{})
+	if value == nil {
+		return ClientSubject{}, status.Errorf(codes.Internal, "cannot obtain client subject")
+	}
+
+	clientSubject, ok := value.(ClientSubject)
+	if !ok {
+		return ClientSubject{}, status.Errorf(codes.Internal, "cannot determine client subject")
+	}
+
+	return clientSubject, nil
 }
