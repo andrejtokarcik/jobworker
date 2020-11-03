@@ -29,6 +29,7 @@ func NewJobWorkerServer() pb.JobWorkerServer {
 type job struct {
 	Cmd
 	clientName string
+	stopped    bool
 }
 
 func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobRequest) (*pb.StartJobResponse, error) {
@@ -41,16 +42,18 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 		return nil, status.Errorf(codes.Internal, "generated UUID is invalid")
 	}
 
-	cmd := server.cmdCreator.NewCmd(req.Command)
-
 	clientSubject := ctx.Value(clientSubjectKey{})
 	if clientSubject == nil {
 		return nil, status.Errorf(codes.Internal, "cannot determine client subject")
 	}
-	clientName := clientSubject.(pkix.Name).CommonName
 
-	server.jobs.Store(jobUUID, job{cmd, clientName})
-	cmd.Start()
+	job := job{
+		Cmd:        server.cmdCreator.NewCmd(req.Command),
+		clientName: clientSubject.(pkix.Name).CommonName,
+		stopped:    false,
+	}
+	server.jobs.Store(jobUUID, job)
+	job.Start()
 
 	response := &pb.StartJobResponse{
 		JobUUID: jobUUID,
@@ -64,11 +67,19 @@ func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobReque
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
 	}
 
-	err := value.(job).Stop()
+	job := value.(job)
+	state := determineState(job.stopped, job.Status())
+	if state != pb.GetJobResponse_RUNNING {
+		return nil, status.Errorf(codes.FailedPrecondition, "job process is not running: %v", state)
+	}
+
+	err := job.Stop()
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to send a stop signal to the job: %v", err)
 	}
 
+	job.stopped = true
+	server.jobs.Store(req.JobUUID, job)
 	return &pb.StopJobResponse{}, nil
 }
 
@@ -78,8 +89,8 @@ func (server *jobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
 	}
 
-	cmd := value.(job).Cmd
-	cmdStatus := cmd.Status()
+	job := value.(job)
+	cmdStatus := job.Status()
 
 	startedAt, err := unixNanoToTimestamp(cmdStatus.StartTs)
 	if err != nil {
@@ -92,8 +103,8 @@ func (server *jobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest
 	}
 
 	resp := &pb.GetJobResponse{
-		Command:   cmd.Spec(),
-		State:     determineState(cmdStatus),
+		Command:   job.Spec(),
+		State:     determineState(job.stopped, cmdStatus),
 		ExitCode:  int32(cmdStatus.Exit),
 		StartedAt: startedAt,
 		EndedAt:   endedAt,
