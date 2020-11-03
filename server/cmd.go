@@ -8,6 +8,7 @@ import (
 
 type CmdStatus = gocmd.Status
 type CmdSpec = pb.CommandSpec
+type CmdState = pb.GetJobResponse_State
 
 type CmdCreator interface {
 	NewCmd(*CmdSpec) Cmd
@@ -40,4 +41,28 @@ func (cmd goCmd) Spec() *CmdSpec {
 		Env:     cmd.Env,
 		Dir:     cmd.Dir,
 	}
+}
+
+func determineState(stopped bool, status CmdStatus) CmdState {
+	if stopped {
+		return pb.GetJobResponse_STOPPED
+	}
+
+	if status.Error != nil {
+		return pb.GetJobResponse_FAILED
+	}
+
+	if status.StartTs == 0 {
+		return pb.GetJobResponse_PENDING
+	}
+
+	if status.StopTs == 0 {
+		return pb.GetJobResponse_RUNNING
+	}
+
+	if status.Complete {
+		return pb.GetJobResponse_COMPLETED
+	}
+
+	return pb.GetJobResponse_UNKNOWN
 }

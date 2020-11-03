@@ -68,7 +68,8 @@ func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobReque
 	}
 
 	job := value.(job)
-	if _, state := job.Status(); state != pb.GetJobResponse_RUNNING {
+	state := determineState(job.stopped, job.Status())
+	if state != pb.GetJobResponse_RUNNING {
 		return nil, status.Errorf(codes.FailedPrecondition, "job process is not running: %v", state)
 	}
 
@@ -89,59 +90,33 @@ func (server *jobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest
 	}
 
 	job := value.(job)
-	jobStatus, jobState := job.Status()
+	cmdStatus := job.Status()
 
-	startedAt, err := unixNanoToTimestamp(jobStatus.StartTs)
+	startedAt, err := unixNanoToTimestamp(cmdStatus.StartTs)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot convert job start to timestamp: %v", err)
 	}
 
-	endedAt, err := unixNanoToTimestamp(jobStatus.StopTs)
+	endedAt, err := unixNanoToTimestamp(cmdStatus.StopTs)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot convert job end to timestamp: %v", err)
 	}
 
 	resp := &pb.GetJobResponse{
 		Command:   job.Spec(),
-		State:     jobState,
-		ExitCode:  int32(jobStatus.Exit),
+		State:     determineState(job.stopped, cmdStatus),
+		ExitCode:  int32(cmdStatus.Exit),
 		StartedAt: startedAt,
 		EndedAt:   endedAt,
-		PID:       uint32(jobStatus.PID),
+		PID:       uint32(cmdStatus.PID),
 	}
 
 	if req.WithLogs {
-		resp.Stdout = jobStatus.Stdout
-		resp.Stderr = jobStatus.Stderr
+		resp.Stdout = cmdStatus.Stdout
+		resp.Stderr = cmdStatus.Stderr
 	}
 
 	return resp, nil
-}
-
-func (j job) Status() (CmdStatus, pb.GetJobResponse_State) {
-	status := j.Cmd.Status()
-
-	if j.stopped {
-		return status, pb.GetJobResponse_STOPPED
-	}
-
-	if status.Error != nil {
-		return status, pb.GetJobResponse_FAILED
-	}
-
-	if status.StartTs == 0 {
-		return status, pb.GetJobResponse_PENDING
-	}
-
-	if status.StopTs == 0 {
-		return status, pb.GetJobResponse_RUNNING
-	}
-
-	if status.Complete {
-		return status, pb.GetJobResponse_COMPLETED
-	}
-
-	return status, pb.GetJobResponse_UNKNOWN
 }
 
 func unixNanoToTimestamp(n int64) (*types.Timestamp, error) {
