@@ -10,6 +10,8 @@ service JobWorker {
   rpc StartJob(StartJobRequest) returns (StartJobResponse);
   rpc StopJob(StopJobRequest) returns (StopJobResponse);
   rpc GetJob(GetJobRequest) returns (GetJobResponse);
+  // ListJobs returns a list of jobs started by the caller.
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
 }
 
 message CommandSpec {
@@ -77,4 +79,12 @@ message GetJobResponse {
   // Populated only if with_logs set to true
   repeated string stdout = 7;
   repeated string stderr = 8;
+}
+
+message ListJobsRequest {}
+
+message ListJobsResponse {
+  repeated string job_uuids = 1 [
+    (gogoproto.customname) = "JobUUIDs"
+  ];
 }
