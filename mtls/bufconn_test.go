@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	"github.com/andrejtokarcik/jobworker/client"
 	"github.com/andrejtokarcik/jobworker/server"
 )
 
@@ -54,13 +53,16 @@ func (suite *BufconnSuite) contextDialer(context.Context, string) (net.Conn, err
 }
 
 func (suite *BufconnSuite) DialBufconn(serverName string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	return client.DialContextWithTimeout(
-		context.Background(),
-		suite.ClientTimeout,
+	ctx, cancel := context.WithTimeout(context.Background(), suite.ClientTimeout)
+	defer cancel()
+
+	return grpc.DialContext(
+		ctx,
 		serverName,
 		append(
 			opts,
 			grpc.WithContextDialer(suite.contextDialer),
+			grpc.WithReturnConnectionError(),
 		)...,
 	)
 }
