@@ -55,6 +55,8 @@ func filterRPCCallers(client server.ClientSubject, rpcInfo *grpc.UnaryServerInfo
 		return client.CommonName != "client2"
 	case jobWorkerMethod("GetJob"):
 		return true
+	case jobWorkerMethod("ListJobs"):
+		return true
 	default:
 		return false
 	}

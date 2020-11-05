@@ -32,7 +32,7 @@ func CLI(ctx context.Context) *cobra.Command {
 	cmdRoot.PersistentFlags().StringVar(&credsFiles.Key, "client-key", "client.key", "private key file to use for the client")
 	cmdRoot.PersistentFlags().StringVar(&credsFiles.PeerCACert, "server-ca-cert", "server-ca.crt", "certificate file of the CA to authenticate the server")
 
-	cmdRoot.AddCommand(cmdStartJob(ctx), cmdStopJob(ctx), cmdGetJob(ctx))
+	cmdRoot.AddCommand(cmdStartJob(ctx), cmdStopJob(ctx), cmdGetJob(ctx), cmdListJobs(ctx))
 	return cmdRoot
 }
 
@@ -102,6 +102,23 @@ func cmdGetJob(ctx context.Context) *cobra.Command {
 
 	cmdGetJob.Flags().BoolVar(&withLogs, "with-logs", false, "whether to include stdout/stderr outputs")
 	return cmdGetJob
+}
+
+func cmdListJobs(ctx context.Context) *cobra.Command {
+	cmdListJobs := &cobra.Command{
+		Use:   "list-jobs [flags]",
+		Short: "List jobs started by the client",
+		Run: withJobWorkerClient(ctx, func(ctx context.Context, client pb.JobWorkerClient, args []string) {
+			req := &pb.ListJobsRequest{}
+			log.Print("Requesting ListJobs")
+			resp, err := client.ListJobs(ctx, req)
+			if err != nil {
+				log.Fatal("ListJobs failed: ", err)
+			}
+			fmt.Println(resp)
+		}),
+	}
+	return cmdListJobs
 }
 
 func withJobWorkerClient(ctx context.Context, callRPC func(context.Context, pb.JobWorkerClient, []string)) func(*cobra.Command, []string) {

@@ -133,3 +133,20 @@ func (server *jobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest
 func unixNanoToTimestamp(n int64) (*types.Timestamp, error) {
 	return types.TimestampProto(time.Unix(0, n))
 }
+
+func (server *jobWorkerServer) ListJobs(ctx context.Context, req *pb.ListJobsRequest) (*pb.ListJobsResponse, error) {
+	clientSubject, err := getClientSubject(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	jobUUIDs := []string{}
+	server.jobs.Range(func(uuid, value interface{}) bool {
+		if value.(job).isOwnedBy(clientSubject) {
+			jobUUIDs = append(jobUUIDs, uuid.(string))
+		}
+		return true
+	})
+
+	return &pb.ListJobsResponse{JobUUIDs: jobUUIDs}, nil
+}
