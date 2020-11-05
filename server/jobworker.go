@@ -80,7 +80,7 @@ func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobReque
 		return nil, status.Errorf(codes.PermissionDenied, "not allowed to stop this job")
 	}
 
-	if state := determineState(job.stopped, job.Status()); state != pb.GetJobResponse_RUNNING {
+	if state, _ := determineState(job.stopped, job.Status()); state != pb.GetJobResponse_RUNNING {
 		return nil, status.Errorf(codes.FailedPrecondition, "job process is not running: %v", state)
 	}
 
@@ -102,6 +102,7 @@ func (server *jobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest
 
 	job := value.(job)
 	cmdStatus := job.Status()
+	state, stateDetails := determineState(job.stopped, cmdStatus)
 
 	startedAt, err := unixNanoToTimestamp(cmdStatus.StartTs)
 	if err != nil {
@@ -114,12 +115,13 @@ func (server *jobWorkerServer) GetJob(ctx context.Context, req *pb.GetJobRequest
 	}
 
 	resp := &pb.GetJobResponse{
-		Command:   job.Spec(),
-		State:     determineState(job.stopped, cmdStatus),
-		ExitCode:  int32(cmdStatus.Exit),
-		StartedAt: startedAt,
-		EndedAt:   endedAt,
-		PID:       uint32(cmdStatus.PID),
+		Command:      job.Spec(),
+		State:        state,
+		StateDetails: stateDetails,
+		ExitCode:     int32(cmdStatus.Exit),
+		StartedAt:    startedAt,
+		EndedAt:      endedAt,
+		PID:          uint32(cmdStatus.PID),
 	}
 
 	if req.WithLogs {

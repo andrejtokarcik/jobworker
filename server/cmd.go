@@ -43,26 +43,26 @@ func (cmd goCmd) Spec() *CmdSpec {
 	}
 }
 
-func determineState(stopped bool, status CmdStatus) CmdState {
+func determineState(stopped bool, status CmdStatus) (CmdState, string) {
 	if stopped {
-		return pb.GetJobResponse_STOPPED
+		return pb.GetJobResponse_STOPPED, ""
 	}
 
 	if status.Error != nil {
-		return pb.GetJobResponse_FAILED
+		return pb.GetJobResponse_FAILED, status.Error.Error()
 	}
 
 	if status.StartTs == 0 {
-		return pb.GetJobResponse_PENDING
+		return pb.GetJobResponse_PENDING, ""
 	}
 
 	if status.StopTs == 0 {
-		return pb.GetJobResponse_RUNNING
+		return pb.GetJobResponse_RUNNING, ""
 	}
 
 	if status.Complete {
-		return pb.GetJobResponse_COMPLETED
+		return pb.GetJobResponse_COMPLETED, ""
 	}
 
-	return pb.GetJobResponse_UNKNOWN
+	return pb.GetJobResponse_UNKNOWN, ""
 }
