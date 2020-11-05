@@ -8,8 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
-
-	"github.com/andrejtokarcik/jobworker/server"
 )
 
 type BufconnConfig struct {
@@ -34,7 +32,7 @@ func NewBufconnSuite() BufconnSuite {
 }
 
 func (suite *BufconnSuite) SetupBufconn(opts ...grpc.ServerOption) {
-	suite.grpcServer = server.New(opts...)
+	suite.grpcServer = grpc.NewServer(opts...)
 	suite.listener = bufconn.Listen(suite.BufSize)
 	go func() {
 		if err := suite.grpcServer.Serve(suite.listener); err != nil {

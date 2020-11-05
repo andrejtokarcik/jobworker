@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/x509/pkix"
 	"sync"
 	"time"
 
@@ -28,8 +27,12 @@ func NewJobWorkerServer() pb.JobWorkerServer {
 
 type job struct {
 	Cmd
-	clientName string
-	stopped    bool
+	startedBy ClientSubject
+	stopped   bool
+}
+
+func (j job) isOwnedBy(client ClientSubject) bool {
+	return j.startedBy.CommonName == client.CommonName
 }
 
 func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobRequest) (*pb.StartJobResponse, error) {
@@ -42,15 +45,15 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 		return nil, status.Errorf(codes.Internal, "generated UUID is invalid")
 	}
 
-	clientSubject := ctx.Value(clientSubjectKey{})
-	if clientSubject == nil {
-		return nil, status.Errorf(codes.Internal, "cannot determine client subject")
+	clientSubject, err := getClientSubject(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	job := job{
-		Cmd:        server.cmdCreator.NewCmd(req.Command),
-		clientName: clientSubject.(pkix.Name).CommonName,
-		stopped:    false,
+		Cmd:       server.cmdCreator.NewCmd(req.Command),
+		startedBy: clientSubject,
+		stopped:   false,
 	}
 	server.jobs.Store(jobUUID, job)
 	job.Start()
@@ -62,18 +65,26 @@ func (server *jobWorkerServer) StartJob(ctx context.Context, req *pb.StartJobReq
 }
 
 func (server *jobWorkerServer) StopJob(ctx context.Context, req *pb.StopJobRequest) (*pb.StopJobResponse, error) {
+	clientSubject, err := getClientSubject(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	value, ok := server.jobs.Load(req.JobUUID)
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "no job found for the given UUID")
 	}
-
 	job := value.(job)
-	state := determineState(job.stopped, job.Status())
-	if state != pb.GetJobResponse_RUNNING {
+
+	if !job.isOwnedBy(clientSubject) {
+		return nil, status.Errorf(codes.PermissionDenied, "not allowed to stop this job")
+	}
+
+	if state := determineState(job.stopped, job.Status()); state != pb.GetJobResponse_RUNNING {
 		return nil, status.Errorf(codes.FailedPrecondition, "job process is not running: %v", state)
 	}
 
-	err := job.Stop()
+	err = job.Stop()
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to send a stop signal to the job: %v", err)
 	}

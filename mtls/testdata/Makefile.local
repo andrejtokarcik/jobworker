@@ -2,7 +2,7 @@ OPENSSL ?= openssl
 KEY_LENGTH := 4096
 
 CA_CERTS ?= client-ca.crt server-ca.crt server-ca2.crt
-CA_SIGNED_CERTS ?= client-ca/client1.crt server-ca/server1.crt
+CA_SIGNED_CERTS ?= client-ca/client1.crt client-ca/client2.crt client-ca/client3.crt server-ca/server1.crt
 SELF_SIGNED_CERTS ?= self-signed.crt
 ALL_SIGNING_REQUESTS = $(patsubst %.crt, %.csr, $(CA_SIGNED_CERTS) $(SELF_SIGNED_CERTS))
 

@@ -2,7 +2,6 @@ package server_test
 
 import (
 	"context"
-	"crypto/x509/pkix"
 	"errors"
 	"testing"
 
@@ -24,7 +23,7 @@ func (suite *jobWorkerTestSuite) SetupTest() {
 	suite.mockCmdCreator = new(mocks.CmdCreator)
 	suite.jobWorker = server.NewCustomJobWorkerServer(suite.mockCmdCreator)
 
-	clientSubject := pkix.Name{CommonName: "client"}
+	clientSubject := server.ClientSubject{CommonName: "client"}
 	suite.ctx = server.SetClientSubject(context.Background(), clientSubject)
 }
 
